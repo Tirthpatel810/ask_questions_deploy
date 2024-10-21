@@ -1,0 +1,181 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" ng-app="myApp">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Question Answer Application</title>
+    
+    <!-- External Scripts -->
+    <script src="{% static 'frontend/Angular.js' %}"></script>
+    <script src="{% static 'frontend/app.js' %}"></script>
+    <script src="{% static 'frontend/controller/controller.js' %}"></script>
+    
+    <!-- External Styles -->
+    <link rel="stylesheet" href="{% static 'frontend/css/styles.css' %}">
+</head>
+<body ng-controller="controller">
+    <div class="container">
+        <h2 class="app-title">Ask a Question</h2>
+        
+        <!-- Question Form -->
+        <form class="question-form">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="question">Question:</label>
+                <input type="text" id="question" class="input-field" ng-model="question" placeholder="Type your question here..." required>
+            </div>
+
+            <div class="form-group">
+                <label for="language">Select Language:</label>
+                <select id="language" class="select-field" ng-model="selectedLanguage" ng-options="lang for lang in languages track by lang" required>
+                    <option value="" disabled selected>Select a language</option>
+                </select>
+            </div>
+
+            <div class="button-group">
+                <button type="button" class="btn reddit-btn" ng-click="get_answer_from_reddit()">Get from Reddit</button>
+                <button type="button" class="btn stackoverflow-btn" ng-click="get_answer_from_stackoverflow()">Get from StackOverflow</button>
+            </div>
+        </form>
+
+        <!-- Status Message -->
+        <div class="status-message" ng-if="status_translate">
+            <span ng-bind="status_translate"></span>
+        </div>
+
+        <!-- Translated Question Section -->
+        <!-- <div class="translated-section" ng-if="translated_data">
+            <h3>Translated Question:</h3>
+            <p class="translated-text" ng-bind="translated_data"></p>
+            <button type="button" class="btn speak-btn" ng-click="speak(question)">
+                <img src="{% static 'frontend/icons/speak-icon.png' %}" alt="Speak" style="width: 20px; height: 20px;">
+            </button>
+        </div> -->
+
+        <!-- StackOverflow Answers Section -->
+        <div class="answers-section stackoverflow-answers" ng-if="show_data_stackoverflow">
+            <h3>StackOverflow Answers</h3>
+
+            <!-- Search and Sort -->
+            <div class="form-group">
+                <label for="searchQuerySO">Search Answers:</label>
+                <input type="text" id="searchQuerySO" class="input-field" ng-model="searchQuerySO" placeholder="Search StackOverflow answers...">
+            </div>
+
+            <div class="form-group">
+                <label for="sortBySO">Sort By:</label>
+                <select id="sortBySO" class="select-field" ng-model="sortBySO">
+                    <option value="title">Ascending Title</option>
+                    <option value="-title">Descending Title</option>
+                    <option value="-answer_count">Answer Count</option>
+                </select>
+            </div>
+
+            <!-- Email Report -->
+            <form class="email-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="emailSO">Receive Report by Email:</label>
+                    <input type="email" id="emailSO" class="input-field" ng-model="recipient_email" placeholder="Enter your email" required>
+                </div>
+                <button type="submit" class="btn email-btn" ng-click="generateAndSendReport(recipient_email)">Generate & Send Report</button>
+            </form>
+
+            <div class="status-message" ng-if="status_email">
+                <span ng-bind="status_email"></span>
+            </div>
+
+            <!-- Answers List -->
+            <div class="answers-list">
+                {% verbatim %}
+                <div ng-repeat="answer in answers | filter:searchQuerySO | orderBy:sortBySO" class="answer-card stackoverflow-answer">
+                    <strong ng-bind="answer.title" class="answer-title"></strong>
+                    <span class="answer-meta">Tags: {{ answer.tags }} | Answer Count: {{ answer.answer_count }}</span><br>
+                    <button type="button" class="btn speak-btn" ng-click="speak([answer.title, answer.tags, answer.answer_count])">
+                        <img ng-src="{{'../static/frontend/icons/speak-icon.png'}}" alt="Speak" style="width: 20px; height: 20px;">
+                    </button>
+                    <button type="button" class="btn translate-btn" ng-click="translateQuestion([answer.title, answer.answer_count], answer.title)">
+                        <img ng-src="{{'../static/frontend/icons/google-translate-logo.png'}}" alt="Translate" style="width: 20px; height: 20px;">
+                    </button>
+                    <a ng-href="{{answer.url}}" target="_blank" class="answer-link">View on StackOverflow</a>
+
+                    <!-- Translated Answer Section -->
+                    <div class="status-message" ng-if="status_translate"><span ng-bind="status_translate"></span></div>
+                    <div class="translated-section" ng-if="sender == answer.title">
+                        <h3>Translated Answer:</h3>
+                        <p class="translated-text" ng-bind="translated_data"></p>
+                    </div>
+                </div>
+                {% endverbatim %}
+            </div>
+        </div>
+
+        <!-- Reddit Answers Section -->
+        <div class="answers-section reddit-answers" ng-if="show_data_reddit">
+            <h3>Reddit Answers</h3>
+
+            <!-- Search and Sort -->
+            <div class="form-group">
+                <label for="searchQueryReddit">Search Answers:</label>
+                <input type="text" id="searchQueryReddit" class="input-field" ng-model="searchQueryReddit" placeholder="Search Reddit answers...">
+            </div>
+
+            <div class="form-group">
+                <label for="sortByReddit">Sort By:</label>
+                <select id="sortByReddit" class="select-field" ng-model="sortByReddit">
+                    <option value="title">Ascending Title</option>
+                    <option value="-title">Descending Title</option>
+                </select>
+            </div>
+
+            <!-- Email Report -->
+            <form class="email-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="emailReddit">Receive Report by Email:</label>
+                    <input type="email" id="emailReddit" class="input-field" ng-model="recipient_email" placeholder="Enter your email" required>
+                </div>
+                <button type="submit" class="btn email-btn" ng-click="generateAndSendReport(recipient_email)">Generate & Send Report</button>
+            </form>
+
+            <div class="status-message" ng-if="status_email">
+                <span ng-bind="status_email"></span>
+            </div>
+
+            <!-- Answers List -->
+            <div class="answers-list">
+                {% verbatim %}
+                <div ng-repeat="answer in answers | filter:searchQueryReddit | orderBy:sortByReddit" class="answer-card reddit-answer">
+                    <strong ng-bind="answer.title" class="answer-title"></strong>
+                    <span class="description-text">
+                        {{ answer.description.length > 250 && !answer.expanded ? (answer.description | limitTo: 100) + '...' : answer.description }}
+                    </span>
+                    <span class="show-more-toggle" ng-click="toggleDescription(answer)">
+                        {{ answer.expanded ? 'Show Less' : 'Show More' }}
+                    </span><br>
+                    <button type="button" class="btn speak-btn" ng-click="speak([answer.title, answer.description])">
+                        <img ng-src="{{'../static/frontend/icons/speak-icon.png'}}" alt="Speak" style="width: 20px; height: 20px;">
+                    </button>
+                    <button type="button" class="btn translate-btn" ng-click="translateQuestion([answer.title, answer.description], answer.title)">
+                        <img ng-src="{{'../static/frontend/icons/google-translate-logo.png'}}" alt="Translate" style="width: 20px; height: 20px;">
+                    </button>
+                    <a ng-href="{{answer.url}}" target="_blank" class="answer-link">View on Reddit</a>
+
+                    <div class="status-message" ng-if="status_translate"><span ng-bind="status_translate"></span></div>
+                    
+                    <div class="translated-section" ng-if="sender == answer.title">
+                        <h3>Translated Answer:</h3>
+                        <p class="translated-text" ng-bind="translated_data"></p>
+                    </div>
+                </div>
+                {% endverbatim %}
+            </div>
+        </div>
+
+        <div ng-if="!show_data_stackoverflow && !show_data_reddit">
+            <p ng-bind="msg" class="status-message"></p>
+        </div>
+    </div>
+</body>
+</html>
