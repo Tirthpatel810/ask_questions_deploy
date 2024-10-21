@@ -61,7 +61,7 @@ app.controller('controller', function($scope, $http) {
     $scope.get_answer_from_reddit = function() {
         $scope.show_data_stackoverflow = false;
         $scope.msg = 'Wait for a moment, data is being collected from Reddit...';
-        $http.post('http://127.0.0.1:8000/api/get_reddit_answers/', { question: $scope.question })
+        $http.post('https://ask-questions.onrender.com/api/get_reddit_answers/', { question: $scope.question })
             .then(function(response) {
                 if (response.data.answers && response.data.answers.length > 0) {
                     $scope.answers = response.data.answers.map(function(answer) {
@@ -90,7 +90,7 @@ app.controller('controller', function($scope, $http) {
     $scope.get_answer_from_stackoverflow = function() {
         $scope.show_data_reddit = false;
         $scope.msg = 'Wait for a moment, data is being collected from StackOverflow...';
-        $http.post('http://127.0.0.1:8000/api/get_stackoverflow_answers/', { question: $scope.question })
+        $http.post('https://ask-questions.onrender.com/api/get_stackoverflow_answers/', { question: $scope.question })
             .then(function(response) {
                 if (response.data.answers && response.data.answers.length > 0) {
                     $scope.answers = response.data.answers.map(function(answer) {
