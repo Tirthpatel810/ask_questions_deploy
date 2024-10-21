@@ -5,20 +5,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Question Answer Application</title>
-    
-    <!-- External Scripts -->
+    <link rel="icon" href="{% static 'frontend/icons/favicon.ico' %}" type="image/x-icon">
     <script src="{% static 'frontend/Angular.js' %}"></script>
     <script src="{% static 'frontend/app.js' %}"></script>
     <script src="{% static 'frontend/controller/controller.js' %}"></script>
     
-    <!-- External Styles -->
     <link rel="stylesheet" href="{% static 'frontend/css/styles.css' %}">
 </head>
 <body ng-controller="controller">
     <div class="container">
         <h2 class="app-title">Ask a Question</h2>
         
-        <!-- Question Form -->
         <form class="question-form">
             {% csrf_token %}
             <div class="form-group">
