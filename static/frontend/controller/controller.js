@@ -156,6 +156,7 @@ app.controller('controller', function($scope, $http) {
             console.error("Error: ", error);
         });
     };
+    
     $scope.speak = function(text) {
         var csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
     

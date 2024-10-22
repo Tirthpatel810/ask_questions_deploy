@@ -29,7 +29,9 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.graphics.shapes import Drawing, Line
 
 from gtts import gTTS
-import pygame
+import tempfile
+import os
+from playsound import playsound
 
 def index(request):
     return render(request, 'index.html')
@@ -289,19 +291,33 @@ def speak_text(request):
         try:
             data = json.loads(request.body)
             text = data.get('text', '')
-            if isinstance(text, list):
-                text = ' '.join(text)
-            if text:
-                tts = gTTS(text=text, lang='en')
-                tts.save('output.mp3')
-                pygame.mixer.init()
-                pygame.mixer.music.load('output.mp3')
-                pygame.mixer.music.play()
 
-                return JsonResponse({'status': 'success'})
+            if isinstance(text, list):
+                text = ' '.join([str(item) for item in text])
+
+            if text:
+                # Create a temporary audio file
+                with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as temp:
+                    tts = gTTS(text=text, lang='en')
+                    tts.save(temp.name)
+                    temp_path = temp.name
+                
+                playsound(temp_path)
+
+                response = JsonResponse({
+                    "success": True,
+                    "status": "success",
+                    "status_code": 200,
+                    "audio_file": temp_path
+                })
+                os.remove(temp_path)
+
+                return response
             else:
                 return JsonResponse({'status': 'error', 'message': 'No text provided'})
         except json.JSONDecodeError:
             return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'})
-    
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
