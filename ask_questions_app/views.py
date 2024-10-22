@@ -1,7 +1,8 @@
 from django.shortcuts import render
 
 import requests
-from .models import Question
+from .models import Question,AccessToken
+from datetime import datetime, timedelta
 from rest_framework.decorators import api_view
 from rest_framework import status
 from rest_framework.response import Response
@@ -32,6 +33,45 @@ import pyttsx3
 def index(request):
     return render(request, 'index.html')
 
+def get_access_token():
+    # Fetch the latest token from the database
+    token_info = AccessToken.objects.first()
+    
+    if token_info:
+        if token_info.expires_at > datetime.now():
+            return token_info.token
+        
+    new_token = fetch_new_token()
+    return new_token
+
+def fetch_new_token():
+    url = 'https://www.reddit.com/api/v1/access_token'
+    data = {
+        'grant_type': 'password',
+        'username': settings.REDDIT_USERNAME,
+        'password': settings.REDDIT_PASSWORD,
+    }
+    auth = requests.auth.HTTPBasicAuth(settings.REDDIT_CLIENT_ID, settings.REDDIT_CLIENT_SECRET)
+    
+    response = requests.post(url, auth=auth, data=data)
+    
+    if response.status_code == 200:
+        token_data = response.json()
+        token = token_data['access_token']
+        expires_in = token_data['expires_in']
+        
+        AccessToken.objects.all().delete()
+
+        AccessToken.objects.update_or_create(
+            defaults={
+                'token': token,
+                'expires_at': datetime.now() + timedelta(seconds=expires_in)
+            }
+        )
+        return token
+    else:
+        raise Exception("Failed to fetch access token")
+
 @api_view(['POST'])
 def get_reddit_answers(request):
     question_text = request.data.get('question', '')
@@ -44,7 +84,8 @@ def get_reddit_answers(request):
         return Response({'question': question_text, 'answers': question.answers}, status=status.HTTP_200_OK)
     except Question.DoesNotExist:
         url = f"https://www.reddit.com/search.json?q={question_text}&sort=relevance&t=all"
-        headers = {'User-Agent': 'Q&A_app/0.1 by TirthPatel0810'}
+        access_token = get_access_token()
+        headers = {'Authorization': f'bearer {access_token}', 'User-Agent': 'Q&A_app/0.1 by TirthPatel0810'}
 
         try:
             response = requests.get(url, headers=headers, timeout=10)
