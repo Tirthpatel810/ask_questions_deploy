@@ -28,7 +28,8 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.graphics.shapes import Drawing, Line
 
-import pyttsx3
+from gtts import gTTS
+import pygame
 
 def index(request):
     return render(request, 'index.html')
@@ -289,13 +290,14 @@ def speak_text(request):
             data = json.loads(request.body)
             text = data.get('text', '')
             if text:
-                engine = pyttsx3.init('sapi5')
-                voices = engine.getProperty('voices')
-                engine.setProperty('voice', voices[1].id)
-                engine.setProperty('rate', 170)
+                tts = gTTS(text=text, lang='en')
+                tts.save('output.mp3')  # Save the audio file
 
-                engine.say(text)
-                engine.runAndWait()
+                # Initialize pygame mixer and play the audio file
+                pygame.mixer.init()
+                pygame.mixer.music.load('output.mp3')
+                pygame.mixer.music.play()
+
                 return JsonResponse({'status': 'success'})
             else:
                 return JsonResponse({'status': 'error', 'message': 'No text provided'})
