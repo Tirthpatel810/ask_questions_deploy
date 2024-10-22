@@ -289,11 +289,11 @@ def speak_text(request):
         try:
             data = json.loads(request.body)
             text = data.get('text', '')
+            if isinstance(text, list):
+                text = ' '.join(text)
             if text:
                 tts = gTTS(text=text, lang='en')
-                tts.save('output.mp3')  # Save the audio file
-
-                # Initialize pygame mixer and play the audio file
+                tts.save('output.mp3')
                 pygame.mixer.init()
                 pygame.mixer.music.load('output.mp3')
                 pygame.mixer.music.play()
